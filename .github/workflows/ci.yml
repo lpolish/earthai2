@@ -33,6 +33,15 @@ jobs:
     - name: Lint
       run: pnpm lint
       
+    - name: Check for GOOGLE_API_KEY
+      run: |
+        if [ -z "$GOOGLE_API_KEY" ]; then
+          echo "::error::GOOGLE_API_KEY is not set"
+          exit 1
+        fi
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      
     - name: Build
       run: pnpm build
       env:
