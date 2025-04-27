@@ -128,6 +128,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
     });
   };
 
+  // Add event handlers to prevent map zoom events
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+  };
+
   if (initialX === undefined) {
     return null;
   }
@@ -151,13 +160,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
       disableDragging={isMinimized}
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
-      className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 flex flex-col backdrop-blur-sm bg-opacity-95"
+      className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 flex flex-col backdrop-blur-sm bg-opacity-95 pointer-events-auto"
       dragHandleClassName="chat-drag-handle"
       style={{
         willChange: 'transform',
         zIndex: 1000,
         height: isMinimized ? '44px' : `${windowState.height}px`,
       }}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
     >
       {/* Fixed Header */}
       <div className="chat-drag-handle bg-gradient-to-r from-blue-500 to-blue-600 p-3 cursor-move border-b border-blue-400 pointer-events-auto flex justify-between items-center flex-shrink-0">
@@ -196,9 +207,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
       </div>
 
       {!isMinimized && (
-        <div className="flex flex-col h-[calc(100%-44px)]">
+        <div className="flex flex-col h-[calc(100%-44px)] pointer-events-auto" onWheel={handleWheel} onTouchStart={handleTouchStart}>
           {/* Scrollable Chat Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div 
+            className="flex-1 overflow-y-auto p-4 space-y-3 pointer-events-auto"
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            style={{ overscrollBehavior: 'contain' }}
+          >
             {messages.map((msg) => (
               <div
                 key={msg.id}
