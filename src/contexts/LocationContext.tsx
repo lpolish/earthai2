@@ -42,7 +42,7 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
   };
 
-  // Initialize with default viewport
+  // Initialize with default viewport only on client side
   useEffect(() => {
     const defaultCenter = L.latLng(51.505, -0.09);
     const defaultZoom = 13;

@@ -61,8 +61,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Initialize position only on client side
   useEffect(() => {
-    setInitialX(window.innerWidth - 370);
+    if (typeof window !== 'undefined') {
+      setInitialX(window.innerWidth - 370);
+    }
   }, []);
 
   useEffect(() => {
