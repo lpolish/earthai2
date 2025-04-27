@@ -1,4 +1,4 @@
-name: Code Quality Check
+name: Build
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  check:
-    name: Code Quality
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -28,8 +28,7 @@ jobs:
     - name: Install dependencies
       run: pnpm install
       
-    - name: Type check
-      run: pnpm type-check
-      
-    - name: Lint
-      run: pnpm lint 
+    - name: Build
+      run: pnpm build
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 

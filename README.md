@@ -1,6 +1,6 @@
 # EarthAI 2.0 🌍
 
-[![Code Quality](https://github.com/lpolish/earthai2/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lpolish/earthai2/actions/workflows/ci.yml)
+[![Build](https://github.com/lpolish/earthai2/actions/workflows/ci.yml/badge.svg)](https://github.com/lpolish/earthai2/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-8.x-blue)](https://pnpm.io/)
 
