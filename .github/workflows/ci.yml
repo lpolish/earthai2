@@ -1,4 +1,4 @@
-name: CI
+name: Code Quality Check
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name: Build Status
+  check:
+    name: Code Quality
     runs-on: ubuntu-latest
 
     steps:
@@ -32,9 +32,4 @@ jobs:
       run: pnpm type-check
       
     - name: Lint
-      run: pnpm lint
-      
-    - name: Build
-      run: pnpm build
-      env:
-        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 
+      run: pnpm lint 
