@@ -8,7 +8,11 @@ if (!process.env.GOOGLE_API_KEY) {
   throw new Error('Missing GOOGLE_API_KEY environment variable');
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const genAI = process.env.GOOGLE_API_KEY 
+  ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
+  : null;
+
+const model = genAI?.getGenerativeModel({ model: 'gemini-pro' });
 
 export const runtime = 'edge';
 
@@ -56,6 +60,13 @@ export interface ChatApiRequest {
 
 export async function POST(req: Request) {
   try {
+    if (!genAI || !model) {
+      return NextResponse.json(
+        { error: 'AI service is not configured' },
+        { status: 503 }
+      );
+    }
+
     const { messages, locationContext = '' }: ChatApiRequest = await req.json();
 
     console.log('Received chat request with location context:', locationContext);
@@ -78,9 +89,7 @@ export async function POST(req: Request) {
     const prompt = buildGoogleGenAIPrompt(messages, locationContext);
     console.log('Built prompt with context:', JSON.stringify(prompt, null, 2));
 
-    const geminiStream = await genAI
-      .getGenerativeModel({ model: 'gemini-1.5-flash' })
-      .generateContentStream(prompt);
+    const geminiStream = await model.generateContentStream(prompt);
 
     // Create a ReadableStream from the Gemini response
     const stream = new ReadableStream({
