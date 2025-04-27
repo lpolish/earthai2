@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Rnd } from 'react-rnd';
 import { LatLng } from 'leaflet';
-// Update import from @vercel/ai/react to ai/react
 import { useChat } from 'ai/react';
 import { MapViewport } from './Map';
 import { getLocationContext } from '@/services/geocoding';
@@ -20,8 +19,20 @@ interface ChatWindowProps {
   viewport: MapViewport | null;
 }
 
+const DEFAULT_SIZE = { width: 350, height: 450 };
+const DEFAULT_POSITION = { x: 100, y: 40 };
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
   const [initialX, setInitialX] = useState<number | undefined>(undefined);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [windowState, setWindowState] = useState({
+    width: DEFAULT_SIZE.width,
+    height: DEFAULT_SIZE.height,
+    x: DEFAULT_POSITION.x,
+    y: DEFAULT_POSITION.y,
+  });
+  const [prevState, setPrevState] = useState(windowState);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { locationContext, updateLocationContext } = useLocation();
   const lastViewportRef = useRef<MapViewport | null>(null);
@@ -78,6 +89,45 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  // Minimize/Maximize logic
+  const handleMinimize = () => {
+    if (!isMinimized) setPrevState(windowState);
+    setIsMinimized((min) => !min);
+    setIsMaximized(false);
+  };
+  const handleMaximize = () => {
+    if (!isMaximized) setPrevState(windowState);
+    setIsMaximized((max) => !max);
+    setIsMinimized(false);
+  };
+
+  // Restore logic
+  const getSize = () => {
+    if (isMaximized) return { width: '100%', height: '100%' };
+    if (isMinimized) return { width: prevState.width, height: 44 };
+    return { width: windowState.width, height: windowState.height };
+  };
+  const getPosition = () => {
+    if (isMaximized) return { x: 0, y: 0 };
+    if (isMinimized) return { x: prevState.x, y: prevState.y };
+    return { x: windowState.x, y: windowState.y };
+  };
+
+  // Drag/resize handlers
+  const handleDragStop = (e: any, d: any) => {
+    setWindowState((prev) => ({ ...prev, x: d.x, y: d.y }));
+  };
+  const handleResizeStop = (e: any, dir: any, ref: any, delta: any, pos: any) => {
+    const newWidth = parseInt(ref.style.width, 10);
+    const newHeight = parseInt(ref.style.height, 10);
+    setWindowState({
+      width: newWidth,
+      height: newHeight,
+      x: pos.x,
+      y: pos.y,
+    });
+  };
+
   if (initialX === undefined) {
     return null;
   }
@@ -92,67 +142,117 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
 
   return (
     <Rnd
-      default={{
-        x: initialX,
-        y: 20,
-        width: 350,
-        height: 450,
-      }}
-      minWidth={250}
+      size={getSize()}
+      position={getPosition()}
+      minWidth={300}
       minHeight={200}
       bounds="parent"
-      className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-300 flex flex-col"
+      enableResizing={!isMinimized && !isMaximized}
+      disableDragging={isMinimized}
+      onDragStop={handleDragStop}
+      onResizeStop={handleResizeStop}
+      className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 flex flex-col backdrop-blur-sm bg-opacity-95"
       dragHandleClassName="chat-drag-handle"
+      style={{
+        willChange: 'transform',
+        zIndex: 1000,
+        height: isMinimized ? '44px' : `${windowState.height}px`,
+      }}
     >
-      <div className="chat-drag-handle bg-gray-100 p-2 cursor-move border-b border-gray-300 pointer-events-auto">
-        <h2 className="text-sm font-semibold text-gray-700">EarthAI Chat (Gemini)</h2>
-      </div>
-
-      <div className="flex-grow p-3 overflow-y-auto space-y-2 flex flex-col pointer-events-auto">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`p-2 rounded-lg max-w-[85%] text-sm ${ 
-              msg.role === 'user' ? 'bg-blue-500 text-white self-end ml-auto' : 
-              msg.role === 'assistant' ? 'bg-gray-200 text-gray-800 self-start mr-auto' : 
-              'bg-yellow-100 text-yellow-800 text-xs italic self-center mx-auto' 
-            }`}
+      {/* Fixed Header */}
+      <div className="chat-drag-handle bg-gradient-to-r from-blue-500 to-blue-600 p-3 cursor-move border-b border-blue-400 pointer-events-auto flex justify-between items-center flex-shrink-0">
+        <h2 className="text-sm font-semibold text-white flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          EarthAI Chat
+        </h2>
+        <div className="flex space-x-2">
+          <button
+            onClick={handleMinimize}
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-400 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+            title={isMinimized ? 'Restore' : 'Minimize'}
+            type="button"
           >
-            <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="p-2 self-start mr-auto">
-            <span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce mr-1"></span>
-            <span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce mr-1 delay-75"></span>
-            <span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></span>
-          </div>
-        )}
-        {error && (
-          <div className="p-2 rounded-lg max-w-[85%] text-sm bg-red-100 text-red-700 text-xs self-center mx-auto">
-            <p>Error: {error.message}</p>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+            {isMinimized ? (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><line x1="6" y1="18" x2="18" y2="18" stroke="currentColor" strokeWidth={2} strokeLinecap="round" /></svg>
+            )}
+          </button>
+          <button
+            onClick={handleMaximize}
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-400 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+            title={isMaximized ? 'Restore' : 'Maximize'}
+            type="button"
+          >
+            {isMaximized ? (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="7" y="7" width="10" height="10" rx="2" /><rect x="3" y="3" width="10" height="10" rx="2" /></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
+            )}
+          </button>
+        </div>
       </div>
 
-      <form onSubmit={handleFormSubmit} className="p-2 border-t border-gray-300 flex items-center pointer-events-auto">
-        <input
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          placeholder="Ask EarthAI..."
-          className="flex-grow border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 text-gray-900"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          className="ml-2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
-          disabled={isLoading || !input.trim()}
-        >
-          Send
-        </button>
-      </form>
+      {!isMinimized && (
+        <div className="flex flex-col h-[calc(100%-44px)]">
+          {/* Scrollable Chat Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`p-3 rounded-2xl max-w-[85%] text-sm shadow-sm ${
+                  msg.role === 'user' 
+                    ? 'bg-blue-500 text-white self-end ml-auto rounded-br-none' 
+                    : msg.role === 'assistant' 
+                    ? 'bg-gray-100 text-gray-800 self-start mr-auto rounded-bl-none' 
+                    : 'bg-yellow-50 text-yellow-800 text-xs italic self-center mx-auto border border-yellow-200'
+                }`}
+              >
+                <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="p-3 self-start mr-auto bg-gray-100 rounded-2xl rounded-bl-none shadow-sm">
+                <div className="flex space-x-1">
+                  <span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                  <span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></span>
+                  <span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></span>
+                </div>
+              </div>
+            )}
+            {error && (
+              <div className="p-3 rounded-2xl max-w-[85%] text-sm bg-red-50 text-red-700 text-xs self-center mx-auto border border-red-200 shadow-sm">
+                <p>Error: {error.message}</p>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Fixed Input Area */}
+          <form onSubmit={handleFormSubmit} className="p-3 border-t border-gray-200 bg-gray-50 flex items-center pointer-events-auto flex-shrink-0">
+            <input
+              type="text"
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Ask EarthAI about this location..."
+              className="flex-grow border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-gray-900 placeholder-gray-400"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              disabled={isLoading || !input.trim()}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+        </div>
+      )}
     </Rnd>
   );
 };
