@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,19 @@ jobs:
     - name: Install dependencies
       run: pnpm install
       
+    - name: Type check
+      run: pnpm type-check
+      
+    - name: Lint
+      run: pnpm lint
+      
     - name: Build
-      run: pnpm build
+      run: |
+        if [ -z "$GOOGLE_API_KEY" ]; then
+          echo "GOOGLE_API_KEY not set, skipping build"
+          exit 0
+        else
+          pnpm build
+        fi
       env:
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 
