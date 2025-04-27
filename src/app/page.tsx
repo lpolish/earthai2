@@ -1,7 +1,7 @@
 'use client'; // Add this directive
 
 import dynamic from 'next/dynamic';
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { LatLng } from 'leaflet';
 import { MapViewport } from '@/components/Map';
 
@@ -10,7 +10,10 @@ const Map = dynamic(() => import('@/components/Map'), {
   loading: () => <div className="flex items-center justify-center h-screen w-screen"><p>Loading map...</p></div>, // Centered loading
 });
 
-import ChatWindow from '@/components/ChatWindow';
+const ChatWindow = dynamic(() => import('@/components/ChatWindow'), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function Home() {
   const [clickedCoords, setClickedCoords] = useState<LatLng | null>(null);
@@ -30,17 +33,21 @@ export default function Home() {
     <div className="h-screen w-screen relative overflow-hidden"> 
       {/* Map container */}
       <div className="absolute inset-0 z-0">
-        <Map 
-          onMapClick={handleMapClick}
-          onViewportChange={handleViewportChange}
-        />
+        <Suspense fallback={<div className="flex items-center justify-center h-screen w-screen"><p>Loading map...</p></div>}>
+          <Map 
+            onMapClick={handleMapClick}
+            onViewportChange={handleViewportChange}
+          />
+        </Suspense>
       </div>
       {/* Chat window container - Restore absolute positioning and pointer-events */}
       <div className="absolute inset-0 z-[1001] pointer-events-none"> 
-        <ChatWindow 
-          clickedCoords={clickedCoords}
-          viewport={viewport}
-        />
+        <Suspense fallback={null}>
+          <ChatWindow 
+            clickedCoords={clickedCoords}
+            viewport={viewport}
+          />
+        </Suspense>
       </div>
     </div>
   );

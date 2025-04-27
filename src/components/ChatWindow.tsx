@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Rnd } from 'react-rnd';
 import { LatLng } from 'leaflet';
 // Update import from @vercel/ai/react to ai/react
@@ -24,18 +24,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
   const [initialX, setInitialX] = useState<number | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { locationContext, updateLocationContext } = useLocation();
+  const lastViewportRef = useRef<MapViewport | null>(null);
 
-  // Debug logging for viewport changes
-  useEffect(() => {
-    console.log('Viewport changed:', viewport);
-  }, [viewport]);
+  // Memoize the viewport update handler
+  const handleViewportUpdate = useCallback((viewport: MapViewport) => {
+    if (!lastViewportRef.current || 
+        lastViewportRef.current.center.lat !== viewport.center.lat ||
+        lastViewportRef.current.center.lng !== viewport.center.lng ||
+        lastViewportRef.current.zoom !== viewport.zoom) {
+      lastViewportRef.current = viewport;
+      updateLocationContext(viewport);
+    }
+  }, [updateLocationContext]);
 
   // Update location context when viewport changes
   useEffect(() => {
     if (viewport) {
-      updateLocationContext(viewport);
+      handleViewportUpdate(viewport);
     }
-  }, [viewport, updateLocationContext]);
+  }, [viewport, handleViewportUpdate]);
 
   const {
     messages,
@@ -63,9 +70,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
 
   // Initialize position only on client side
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setInitialX(window.innerWidth - 370);
-    }
+    if (typeof window === 'undefined') return;
+    setInitialX(window.innerWidth - 370);
   }, []);
 
   useEffect(() => {

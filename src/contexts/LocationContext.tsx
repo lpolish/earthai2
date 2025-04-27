@@ -12,10 +12,12 @@ interface LocationContextType {
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
-export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [locationContext, setLocationContext] = useState<string>('');
 
   const updateLocationContext = (viewport: MapViewport) => {
+    if (typeof window === 'undefined') return;
+    
     console.log('Updating location context for viewport:', viewport);
     
     getLocationContext(viewport)
@@ -44,6 +46,8 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Initialize with default viewport only on client side
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const defaultCenter = L.latLng(51.505, -0.09);
     const defaultZoom = 13;
     const defaultBounds = L.latLngBounds(
@@ -65,12 +69,12 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {children}
     </LocationContext.Provider>
   );
-};
+}
 
-export const useLocation = () => {
+export function useLocation() {
   const context = useContext(LocationContext);
   if (context === undefined) {
     throw new Error('useLocation must be used within a LocationProvider');
   }
   return context;
-}; 
+} 
