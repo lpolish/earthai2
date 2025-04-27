@@ -26,6 +26,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
   const [initialX, setInitialX] = useState<number | undefined>(undefined);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [windowState, setWindowState] = useState({
     width: DEFAULT_SIZE.width,
     height: DEFAULT_SIZE.height,
@@ -104,12 +105,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
   // Restore logic
   const getSize = () => {
     if (isMaximized) return { width: '100%', height: '100%' };
-    if (isMinimized) return { width: prevState.width, height: 44 };
+    if (isMinimized) return { width: 200, height: 44 };
     return { width: windowState.width, height: windowState.height };
   };
   const getPosition = () => {
     if (isMaximized) return { x: 0, y: 0 };
-    if (isMinimized) return { x: prevState.x, y: prevState.y };
+    if (isMinimized) return { x: window.innerWidth - 220, y: window.innerHeight - 64 };
     return { x: windowState.x, y: windowState.y };
   };
 
@@ -149,18 +150,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
     }
   };
 
+  const handleClearChat = () => {
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearChat = () => {
+    // Reset the chat by setting messages to empty array
+    messages.length = 0;
+    setShowClearConfirm(false);
+  };
+
+  const cancelClearChat = () => {
+    setShowClearConfirm(false);
+  };
+
   return (
     <Rnd
       size={getSize()}
       position={getPosition()}
-      minWidth={300}
-      minHeight={200}
+      minWidth={isMinimized ? 200 : 300}
+      minHeight={isMinimized ? 44 : 200}
       bounds="parent"
       enableResizing={!isMinimized && !isMaximized}
       disableDragging={isMinimized}
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
-      className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 flex flex-col backdrop-blur-sm bg-opacity-95 pointer-events-auto"
+      className={`bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200 flex flex-col backdrop-blur-sm bg-opacity-95 pointer-events-auto ${isMinimized ? 'minimized-chat' : ''}`}
       dragHandleClassName="chat-drag-handle"
       style={{
         willChange: 'transform',
@@ -179,6 +194,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
           EarthAI Chat
         </h2>
         <div className="flex space-x-2">
+          {!isMinimized && (
+            <button
+              onClick={handleClearChat}
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-400 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+              title="Clear Chat"
+              type="button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+            </button>
+          )}
           <button
             onClick={handleMinimize}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-400 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
@@ -191,18 +218,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><line x1="6" y1="18" x2="18" y2="18" stroke="currentColor" strokeWidth={2} strokeLinecap="round" /></svg>
             )}
           </button>
-          <button
-            onClick={handleMaximize}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-400 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-            title={isMaximized ? 'Restore' : 'Maximize'}
-            type="button"
-          >
-            {isMaximized ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="7" y="7" width="10" height="10" rx="2" /><rect x="3" y="3" width="10" height="10" rx="2" /></svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
-            )}
-          </button>
+          {!isMinimized && (
+            <button
+              onClick={handleMaximize}
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-400 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+              title={isMaximized ? 'Restore' : 'Maximize'}
+              type="button"
+            >
+              {isMaximized ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="7" y="7" width="10" height="10" rx="2" /><rect x="3" y="3" width="10" height="10" rx="2" /></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -241,6 +270,28 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
             {error && (
               <div className="p-3 rounded-2xl max-w-[85%] text-sm bg-red-50 text-red-700 text-xs self-center mx-auto border border-red-200 shadow-sm">
                 <p>Error: {error.message}</p>
+              </div>
+            )}
+            {showClearConfirm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                  <h3 className="text-lg font-semibold mb-4">Clear Chat History</h3>
+                  <p className="text-gray-600 mb-6">Are you sure you want to clear all chat messages? This action cannot be undone.</p>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={cancelClearChat}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmClearChat}
+                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      Clear Chat
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
