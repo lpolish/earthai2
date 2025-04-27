@@ -3,17 +3,6 @@ import { Message } from 'ai';
 import { NextResponse } from 'next/server';
 import { LatLngLiteral } from 'leaflet';
 
-// Ensure the environment variable is loaded
-if (!process.env.GOOGLE_API_KEY) {
-  throw new Error('Missing GOOGLE_API_KEY environment variable');
-}
-
-const genAI = process.env.GOOGLE_API_KEY 
-  ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-  : null;
-
-const model = genAI?.getGenerativeModel({ model: 'gemini-pro' });
-
 export const runtime = 'edge';
 
 const buildGoogleGenAIPrompt = (messages: Message[], locationContext: string) => {
@@ -60,12 +49,15 @@ export interface ChatApiRequest {
 
 export async function POST(req: Request) {
   try {
-    if (!genAI || !model) {
+    if (!process.env.GOOGLE_API_KEY) {
       return NextResponse.json(
         { error: 'AI service is not configured' },
         { status: 503 }
       );
     }
+
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     const { messages, locationContext = '' }: ChatApiRequest = await req.json();
 
