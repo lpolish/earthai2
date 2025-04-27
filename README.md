@@ -3,7 +3,7 @@
 
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-8.x-blue)](https://pnpm.io/)
-[![Vercel Status](https://vercel.com/api/badges/loc-polishs/earthai/deploy-status)](https://vercel.com/loc-polishs/earthai)
+[![Vercel Status](https://vercel.com/prj_mp5qQDNQtbJPh3IpOfWDDFBcANlC/badge)](https://vercel.com/prj_mp5qQDNQtbJPh3IpOfWDDFBcANlC)
 
 A location-aware AI assistant that provides contextual information about geographic locations through an interactive map interface.
 
