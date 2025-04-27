@@ -1,5 +1,11 @@
 # EarthAI 2.0 🌍
 
+[![Build Status](https://github.com/lpolish/earthai2/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lpolish/earthai2/actions/workflows/ci.yml)
+[![Deployment Status](https://github.com/lpolish/earthai2/actions/workflows/vercel.yml/badge.svg?branch=main)](https://github.com/lpolish/earthai2/actions/workflows/vercel.yml)
+[![Vercel](https://vercel.com/lpolish/earthai2/badge.svg)](https://vercel.com/lpolish/earthai2)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-8.x-blue)](https://pnpm.io/)
+
 A location-aware AI assistant that provides contextual information about geographic locations through an interactive map interface.
 
 ## Features
