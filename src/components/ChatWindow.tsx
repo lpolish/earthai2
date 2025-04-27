@@ -47,7 +47,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
   } = useChat({
     api: '/api/chat',
     body: {
-      locationContext,
+      locationContext: locationContext || 'Initializing location context...',
     },
     onError: (err) => {
       console.error('Chat hook error:', err);

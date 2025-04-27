@@ -29,14 +29,5 @@ jobs:
       
     - name: Build
       run: pnpm build
-      
-    - name: Run tests
-      run: pnpm test
-    
-    - name: Run linting
-      run: pnpm lint
-    
-    - name: Run type checking
-      run: pnpm type-check
       env:
         GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 

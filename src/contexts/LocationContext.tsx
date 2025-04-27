@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MapViewport } from '@/components/Map';
 import { getLocationContext } from '@/services/geocoding';
+import L from 'leaflet';
 
 interface LocationContextType {
   locationContext: string;
@@ -40,6 +41,24 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setLocationContext(fallbackContext);
       });
   };
+
+  // Initialize with default viewport
+  useEffect(() => {
+    const defaultCenter = L.latLng(51.505, -0.09);
+    const defaultZoom = 13;
+    const defaultBounds = L.latLngBounds(
+      L.latLng(51.505 - 0.1, -0.09 - 0.1),
+      L.latLng(51.505 + 0.1, -0.09 + 0.1)
+    );
+    
+    const defaultViewport: MapViewport = {
+      center: defaultCenter,
+      zoom: defaultZoom,
+      bounds: defaultBounds
+    };
+    
+    updateLocationContext(defaultViewport);
+  }, []);
 
   return (
     <LocationContext.Provider value={{ locationContext, updateLocationContext }}>
