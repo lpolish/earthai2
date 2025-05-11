@@ -1,7 +1,7 @@
 'use client'; // Add this directive
 
 import dynamic from 'next/dynamic';
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useRef } from 'react';
 import { LatLng } from 'leaflet';
 import { MapViewport } from '@/components/Map';
 
@@ -18,6 +18,7 @@ const ChatWindow = dynamic(() => import('@/components/ChatWindow'), {
 export default function Home() {
   const [clickedCoords, setClickedCoords] = useState<LatLng | null>(null);
   const [viewport, setViewport] = useState<MapViewport | null>(null);
+  const mapRef = useRef<L.Map>(null);
 
   const handleMapClick = (latlng: LatLng) => {
     console.log('Map clicked in Home page:', latlng);
@@ -37,6 +38,7 @@ export default function Home() {
           <Map 
             onMapClick={handleMapClick}
             onViewportChange={handleViewportChange}
+            mapRef={mapRef}
           />
         </Suspense>
       </div>
@@ -46,6 +48,7 @@ export default function Home() {
           <ChatWindow 
             clickedCoords={clickedCoords}
             viewport={viewport}
+            mapRef={mapRef}
           />
         </Suspense>
       </div>

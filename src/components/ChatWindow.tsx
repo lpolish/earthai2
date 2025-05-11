@@ -5,8 +5,9 @@ import { Rnd } from 'react-rnd';
 import { LatLng } from 'leaflet';
 import { useChat } from 'ai/react';
 import { MapViewport } from './Map';
-import { getLocationContext } from '@/services/geocoding';
-import { useLocation } from '@/contexts/LocationContext';
+import { getLocationContext } from '../services/geocoding';
+import { useLocation } from '../contexts/LocationContext';
+import L from 'leaflet';
 
 interface Message {
   id: string; // useChat uses string IDs
@@ -17,12 +18,13 @@ interface Message {
 interface ChatWindowProps {
   clickedCoords: LatLng | null;
   viewport: MapViewport | null;
+  mapRef?: React.RefObject<L.Map>;
 }
 
 const DEFAULT_SIZE = { width: 350, height: 450 };
 const DEFAULT_POSITION = { x: 100, y: 40 };
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport, mapRef }) => {
   const [initialX, setInitialX] = useState<number | undefined>(undefined);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -164,6 +166,48 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
     setShowClearConfirm(false);
   };
 
+  const parseMapLinks = (text: string): React.ReactNode => {
+    const mapLinkRegex = /\[([^\]]+)\]\(map:(-?\d+\.\d+),(-?\d+\.\d+),(\d+)\)/g;
+    const parts: (string | React.ReactElement)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mapLinkRegex.exec(text)) !== null) {
+      // Add text before the link
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      // Add the map link
+      const [_, locationName, lat, lng, zoom] = match;
+      parts.push(
+        <button
+          key={match.index}
+          onClick={() => {
+            const newCenter = new LatLng(parseFloat(lat), parseFloat(lng));
+            const newZoom = parseInt(zoom);
+            // Update the map viewport using the provided mapRef
+            if (mapRef?.current) {
+              mapRef.current.flyTo(newCenter, newZoom);
+            }
+          }}
+          className="text-blue-600 hover:text-blue-800 underline cursor-pointer"
+        >
+          {locationName}
+        </button>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
   return (
     <Rnd
       size={getSize()}
@@ -255,7 +299,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport }) => {
                     : 'bg-yellow-50 text-yellow-800 text-xs italic self-center mx-auto border border-yellow-200'
                 }`}
               >
-                <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  {parseMapLinks(msg.content)}
+                </p>
               </div>
             ))}
             {isLoading && (

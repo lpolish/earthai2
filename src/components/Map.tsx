@@ -48,6 +48,7 @@ export interface MapViewport {
 interface MapProps {
   onMapClick?: (latlng: LatLng) => void;
   onViewportChange?: (viewport: MapViewport) => void;
+  mapRef?: React.RefObject<LeafletMap>;
 }
 
 const MapEvents: React.FC<{
@@ -79,12 +80,13 @@ const MapEvents: React.FC<{
   return null;
 };
 
-const Map: React.FC<MapProps> = ({ onMapClick, onViewportChange }) => {
+const Map: React.FC<MapProps> = ({ onMapClick, onViewportChange, mapRef }) => {
   const [position, setPosition] = useState<L.LatLngExpression>([51.505, -0.09]);
   const [zoom, setZoom] = useState<number>(13);
   const [currentTileLayer, setCurrentTileLayer] = useState(tileLayers[0]);
   const [markerPosition, setMarkerPosition] = useState<LatLng | null>(null);
-  const mapRef = useRef<LeafletMap>(null);
+  const internalMapRef = useRef<LeafletMap>(null);
+  const effectiveMapRef = mapRef || internalMapRef;
 
   const handleTileLayerChange = (url: string) => {
     const layer = tileLayers.find(l => l.url === url);
@@ -102,7 +104,7 @@ const Map: React.FC<MapProps> = ({ onMapClick, onViewportChange }) => {
     navigator.geolocation.getCurrentPosition(
       (location) => {
         const userLatLng = L.latLng(location.coords.latitude, location.coords.longitude);
-        mapRef.current?.flyTo(userLatLng, 15);
+        effectiveMapRef.current?.flyTo(userLatLng, 15);
         setMarkerPosition(userLatLng);
         if (onMapClick) {
           onMapClick(userLatLng);
@@ -118,12 +120,12 @@ const Map: React.FC<MapProps> = ({ onMapClick, onViewportChange }) => {
         maximumAge: 0,
       }
     );
-  }, [onMapClick]);
+  }, [onMapClick, effectiveMapRef]);
 
   return (
     <div className="relative h-full w-full">
       <MapContainer
-        ref={mapRef}
+        ref={effectiveMapRef}
         center={position}
         zoom={zoom}
         scrollWheelZoom={true}
