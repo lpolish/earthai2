@@ -4,7 +4,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-8.x-blue)](https://pnpm.io/)
 [![Security Audit](https://github.com/lpolish/earthai2/actions/workflows/security-audit.yml/badge.svg)](https://github.com/lpolish/earthai2/actions/workflows/security-audit.yml)
-[![Snyk Security](https://snyk.io/badge/github/lpolish/earthai2/badge.svg)](https://snyk.io/test/github/lpolish/earthai2)
+[![Known Vulnerabilities](https://snyk.io/test/github/lpolish/earthai2/badge.svg)](https://snyk.io/test/github/lpolish/earthai2)
 [![Deploy with Vercel](https://img.shields.io/badge/deploy%20with-vercel-black)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flpolish%2Fearthai2)
 
 A location-aware AI assistant that provides contextual information about geographic locations through an interactive map interface.
