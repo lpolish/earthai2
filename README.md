@@ -3,7 +3,7 @@
 
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-8.x-blue)](https://pnpm.io/)
-[![Vercel Status](https://vercel.com/prj_mp5qQDNQtbJPh3IpOfWDDFBcANlC/badge)](https://vercel.com/prj_mp5qQDNQtbJPh3IpOfWDDFBcANlC)
+[![Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flpolish%2Fearthai2)
 
 A location-aware AI assistant that provides contextual information about geographic locations through an interactive map interface.
 
