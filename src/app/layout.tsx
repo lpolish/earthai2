@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import dynamic from 'next/dynamic';
+import { SessionProvider } from 'next-auth/react';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,9 +26,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClientLocationProvider>
-          {children}
-        </ClientLocationProvider>
+        <SessionProvider>
+          <ClientLocationProvider>
+            {children}
+          </ClientLocationProvider>
+        </SessionProvider>
       </body>
     </html>
   );

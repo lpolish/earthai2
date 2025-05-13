@@ -1,9 +1,11 @@
 'use client'; // Add this directive
 
 import dynamic from 'next/dynamic';
-import React, { useState, Suspense, useRef } from 'react';
+import React, { useState, Suspense, useRef, useEffect } from 'react';
 import { LatLng } from 'leaflet';
 import { MapViewport } from '@/components/Map';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const Map = dynamic(() => import('@/components/Map'), {
   ssr: false,
@@ -16,9 +18,29 @@ const ChatWindow = dynamic(() => import('@/components/ChatWindow'), {
 });
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [clickedCoords, setClickedCoords] = useState<LatLng | null>(null);
   const [viewport, setViewport] = useState<MapViewport | null>(null);
   const mapRef = useRef<L.Map>(null);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    }
+  }, [status, router]);
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center h-screen w-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   const handleMapClick = (latlng: LatLng) => {
     console.log('Map clicked in Home page:', latlng);

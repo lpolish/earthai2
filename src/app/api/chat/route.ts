@@ -2,6 +2,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Message } from 'ai';
 import { NextResponse } from 'next/server';
 import { LatLngLiteral } from 'leaflet';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
+import { db } from '@/db';
+import { chatHistory } from '@/db';
 
 export const runtime = 'edge';
 
@@ -55,6 +59,15 @@ export interface ChatApiRequest {
 
 export async function POST(req: Request) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     if (!process.env.GOOGLE_API_KEY) {
       return NextResponse.json(
         { error: 'AI service is not configured' },
@@ -93,11 +106,24 @@ export async function POST(req: Request) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          let fullResponse = '';
           for await (const chunk of geminiStream.stream) {
             const text = chunk.text();
+            fullResponse += text;
             controller.enqueue(new TextEncoder().encode(text));
           }
           controller.close();
+
+          // Store chat history after successful response
+          const lastMessage = messages[messages.length - 1];
+          if (lastMessage && lastMessage.role === 'user') {
+            await db.insert(chatHistory).values({
+              userId: parseInt(session.user.id),
+              message: lastMessage.content,
+              response: fullResponse,
+              locationContext,
+            });
+          }
         } catch (error) {
           controller.error(error);
         }
