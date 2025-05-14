@@ -5,9 +5,7 @@ import { LatLngLiteral } from 'leaflet';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { db } from '@/db';
-import { chatHistory } from '@/db';
-
-export const runtime = 'edge';
+import { chatMessages } from '@/db';
 
 const buildGoogleGenAIPrompt = (messages: Message[], locationContext: string) => {
   // Enhanced system message with structured location awareness
@@ -117,11 +115,18 @@ export async function POST(req: Request) {
           // Store chat history after successful response
           const lastMessage = messages[messages.length - 1];
           if (lastMessage && lastMessage.role === 'user') {
-            await db.insert(chatHistory).values({
-              userId: parseInt(session.user.id),
-              message: lastMessage.content,
-              response: fullResponse,
-              locationContext,
+            const locationData = JSON.parse(locationContext);
+            await db.insert(chatMessages).values({
+              conversationId: crypto.randomUUID(),
+              role: lastMessage.role,
+              content: lastMessage.content,
+              locationContext: {
+                center: { lat: locationData.lat, lng: locationData.lng },
+                zoom: locationData.zoom,
+              },
+              metadata: {
+                model: 'gemini-1.5-pro',
+              },
             });
           }
         } catch (error) {

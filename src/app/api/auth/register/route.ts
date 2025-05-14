@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db';
+import { db } from '@/db';
+import { users } from '@/db';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
