@@ -57,7 +57,7 @@ export interface ChatApiRequest {
 
 export async function POST(req: Request) {
   try {
-    // Check authentication
+    // Check authentication only for chat requests
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
