@@ -1,7 +1,7 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db';
+import GoogleProvider from 'next-auth/providers/google';
+import { db, users } from '@/db';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -13,6 +13,10 @@ const loginSchema = z.object({
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -23,24 +27,29 @@ export const authOptions: NextAuthOptions = {
         try {
           const { email, password } = loginSchema.parse(credentials);
 
-          const user = await db.query.users.findFirst({
-            where: eq(users.email, email),
-          });
+          const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
-          if (!user) {
+          if (!user.length) {
             return null;
           }
 
-          const isValid = await bcrypt.compare(password, user.password);
+          const foundUser = user[0];
+          
+          // Don't allow credential login for OAuth-only users (those without passwords)
+          if (!foundUser.password) {
+            return null;
+          }
+          
+          const isValid = await bcrypt.compare(password, foundUser.password);
 
           if (!isValid) {
             return null;
           }
 
           return {
-            id: user.id.toString(),
-            email: user.email,
-            name: user.name,
+            id: foundUser.id.toString(),
+            email: foundUser.email,
+            name: foundUser.name,
           };
         } catch (error) {
           console.error('Auth error:', error);
@@ -56,7 +65,32 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/login',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'google') {
+        try {
+          // Check if user exists in database
+          const existingUser = await db.select().from(users).where(eq(users.email, user.email!)).limit(1);
+
+          if (!existingUser.length) {
+            // Create new user for Google OAuth
+            const newUser = await db.insert(users).values({
+              email: user.email!,
+              name: user.name || '',
+              password: null, // Google users don't have passwords
+            }).returning();
+
+            user.id = newUser[0].id.toString();
+          } else {
+            user.id = existingUser[0].id.toString();
+          }
+        } catch (error) {
+          console.error('Google sign-in error:', error);
+          return false;
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
       }
