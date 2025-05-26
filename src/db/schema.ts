@@ -4,7 +4,7 @@ import { pgTable, serial, text, timestamp, boolean, integer, jsonb, uuid } from 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
-  password: text('password').notNull(),
+  password: text('password'), // Made optional for OAuth users
   name: text('name'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
