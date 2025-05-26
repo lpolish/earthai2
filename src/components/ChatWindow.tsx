@@ -8,6 +8,9 @@ import { MapViewport } from './Map';
 import { getLocationContext } from '../services/geocoding';
 import { useLocation } from '../contexts/LocationContext';
 import L from 'leaflet';
+import { useSession, signIn } from 'next-auth/react';
+import Link from 'next/link';
+import AuthModal from './AuthModal';
 
 interface Message {
   id: string; // useChat uses string IDs
@@ -36,9 +39,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport, mapRef
     y: DEFAULT_POSITION.y,
   });
   const [prevState, setPrevState] = useState(windowState);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { locationContext, updateLocationContext } = useLocation();
   const lastViewportRef = useRef<MapViewport | null>(null);
+  const { data: session, status } = useSession();
 
   // Memoize the viewport update handler
   const handleViewportUpdate = useCallback((viewport: MapViewport) => {
@@ -208,6 +214,64 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport, mapRef
     return parts.length > 0 ? parts : text;
   };
 
+  // Show loading state while checking auth
+  if (status === 'loading') {
+    return (
+      <div className="fixed bottom-8 right-8 z-[2000] pointer-events-auto bg-white bg-opacity-95 rounded-lg shadow-xl p-6 flex items-center justify-center min-w-[320px] min-h-[120px] border border-gray-200">
+        <span className="text-gray-700 text-sm">Checking authentication...</span>
+      </div>
+    );
+  }
+
+  // If not authenticated, show login/register modal trigger
+  if (!session) {
+    return (
+      <>
+        <div
+          className={`fixed bottom-8 right-8 z-[2000] pointer-events-auto bg-white bg-opacity-95 rounded-lg shadow-xl border border-gray-200 flex flex-col items-center min-w-[220px] min-h-[44px] ${isMinimized ? 'w-[220px] h-[44px] p-0' : 'p-6'}`}
+          style={{ transition: 'all 0.2s', overflow: 'hidden' }}
+        >
+          <div className="w-full flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-blue-700 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+              EarthAI Chat
+            </h2>
+            <button
+              onClick={handleMinimize}
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-400 transition-colors text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 ml-2"
+              title={isMinimized ? 'Restore' : 'Minimize'}
+              type="button"
+            >
+              {isMinimized ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><line x1="6" y1="18" x2="18" y2="18" stroke="currentColor" strokeWidth={2} strokeLinecap="round" /></svg>
+              )}
+            </button>
+          </div>
+          {!isMinimized && (
+            <>
+              <p className="text-gray-700 text-sm mb-4 text-center mt-4">Sign in to use the chat assistant.</p>
+              <button
+                onClick={() => { setAuthModalMode('login'); setAuthModalOpen(true); }}
+                className="w-full mb-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-colors"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => { setAuthModalMode('register'); setAuthModalOpen(true); }}
+                className="text-blue-600 hover:underline text-sm w-full text-center"
+              >
+                Create an account
+              </button>
+            </>
+          )}
+        </div>
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} initialMode={authModalMode} />
+      </>
+    );
+  }
+
   return (
     <Rnd
       size={getSize()}
@@ -223,7 +287,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport, mapRef
       dragHandleClassName="chat-drag-handle"
       style={{
         willChange: 'transform',
-        zIndex: 1000,
+        zIndex: 2000,
         height: isMinimized ? '44px' : `${windowState.height}px`,
       }}
       onWheel={handleWheel}
@@ -314,7 +378,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport, mapRef
               </div>
             )}
             {error && (
-              <div className="p-3 rounded-2xl max-w-[85%] text-sm bg-red-50 text-red-700 text-xs self-center mx-auto border border-red-200 shadow-sm">
+              <div className="p-3 rounded-2xl max-w-[85%] text-sm bg-red-50 text-red-700 self-center mx-auto border border-red-200 shadow-sm">
                 <p>Error: {error.message}</p>
               </div>
             )}
@@ -366,6 +430,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport, mapRef
           </form>
         </div>
       )}
+      <AuthModal 
+        open={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)} 
+        initialMode={authModalMode}
+      />
     </Rnd>
   );
 };
