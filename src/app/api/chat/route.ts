@@ -1,11 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Message } from 'ai';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { LatLngLiteral } from 'leaflet';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
-import { db } from '@/db';
-import { chatMessages } from '@/db';
+import { getToken } from 'next-auth/jwt';
 
 const buildGoogleGenAIPrompt = (messages: Message[], locationContext: string) => {
   // Enhanced system message with structured location awareness
@@ -55,11 +52,12 @@ export interface ChatApiRequest {
   locationContext: string;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    // Check authentication only for chat requests
-    const session = await getServerSession(authOptions);
-    if (!session) {
+    // Check authentication using JWT token (consistent with middleware)
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    
+    if (!token) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -76,10 +74,7 @@ export async function POST(req: Request) {
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
-    const { messages, locationContext = '' }: ChatApiRequest = await req.json();
-
-    console.log('Received chat request with location context:', locationContext);
-    console.log('Messages:', messages);
+    const { messages, locationContext = '{}' }: ChatApiRequest = await req.json();
 
     if (!messages || messages.length === 0) {
       return new Response(JSON.stringify({ error: 'No messages provided' }), {
@@ -88,15 +83,23 @@ export async function POST(req: Request) {
       });
     }
 
-    if (!locationContext) {
-      return new Response(JSON.stringify({ error: 'No location context provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Validate and sanitize location context
+    let sanitizedLocationContext = '{}';
+    try {
+      // Handle potential URI encoding issues
+      const decodedContext = typeof locationContext === 'string' 
+        ? locationContext.replace(/\+/g, ' ') // Replace + with spaces
+        : JSON.stringify(locationContext);
+      
+      // Validate JSON format
+      JSON.parse(decodedContext);
+      sanitizedLocationContext = decodedContext;
+    } catch (error) {
+      console.warn('Invalid location context, using default:', error);
+      sanitizedLocationContext = '{}';
     }
 
-    const prompt = buildGoogleGenAIPrompt(messages, locationContext);
-    console.log('Built prompt with context:', JSON.stringify(prompt, null, 2));
+    const prompt = buildGoogleGenAIPrompt(messages, sanitizedLocationContext);
 
     const geminiStream = await model.generateContentStream(prompt);
 
@@ -115,19 +118,27 @@ export async function POST(req: Request) {
           // Store chat history after successful response
           const lastMessage = messages[messages.length - 1];
           if (lastMessage && lastMessage.role === 'user') {
-            const locationData = JSON.parse(locationContext);
-            await db.insert(chatMessages).values({
-              conversationId: crypto.randomUUID(),
-              role: lastMessage.role,
-              content: lastMessage.content,
-              locationContext: {
-                center: { lat: locationData.lat, lng: locationData.lng },
-                zoom: locationData.zoom,
-              },
-              metadata: {
-                model: 'gemini-1.5-pro',
-              },
-            });
+            try {
+              // Dynamic import to avoid build-time database connection
+              const { db, chatMessages } = await import('@/db');
+              
+              const locationData = JSON.parse(sanitizedLocationContext);
+              await db.insert(chatMessages).values({
+                conversationId: crypto.randomUUID(),
+                role: lastMessage.role,
+                content: lastMessage.content,
+                locationContext: {
+                  center: { lat: locationData.lat || 0, lng: locationData.lng || 0 },
+                  zoom: locationData.zoom || 10,
+                },
+                metadata: {
+                  model: 'gemini-1.5-pro',
+                },
+              });
+            } catch (parseError) {
+              console.error('Failed to parse location context or store message:', parseError);
+              // Continue without storing - don't fail the response
+            }
           }
         } catch (error) {
           controller.error(error);
