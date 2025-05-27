@@ -78,6 +78,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ clickedCoords, viewport, mapRef
     },
     onError: (err) => {
       console.error('Chat hook error:', err);
+      console.error('Error details:', err.message);
     },
     onFinish: () => {
       console.log('Chat stream finished');

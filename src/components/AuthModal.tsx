@@ -17,20 +17,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, initialMode = 'log
     setIsLoading(true);
     
     try {
+      // Use redirect flow for Google OAuth with proper error handling
       const result = await signIn('google', {
-        redirect: false,
-        callbackUrl: '/',
+        callbackUrl: window.location.origin + '/',
+        redirect: false
       });
 
       if (result?.error) {
-        setError('Google sign-in failed. Please try again.');
-        return;
+        console.error('Google sign-in error:', result.error);
+        setError('Google authentication failed. Please try again.');
+        setIsLoading(false);
+      } else if (result?.url) {
+        // Redirect to the OAuth provider
+        window.location.href = result.url;
       }
-
-      onClose();
     } catch (error) {
-      setError('An error occurred during Google sign-in.');
-    } finally {
+      console.error('Google sign-in error:', error);
+      setError('An error occurred during Google sign-in. Please try again.');
       setIsLoading(false);
     }
   };
