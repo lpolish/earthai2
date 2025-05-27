@@ -11,51 +11,79 @@ A location-aware AI assistant that provides contextual information about geograp
 
 ## Features
 
-- Interactive map interface with location awareness
-- Real-time chat with location context
-- Reverse geocoding for human-readable location descriptions
-- Responsive design with Tailwind CSS
-- Edge runtime for fast API responses
+- 🗺️ Interactive map interface with location awareness
+- 💬 Real-time chat with location context
+- 🔐 Google OAuth and email/password authentication
+- 🏗️ User account management and session persistence
+- 🌍 Reverse geocoding for human-readable location descriptions
+- 📱 Responsive design with Tailwind CSS
+- ⚡ Edge runtime for fast API responses
+- 🎯 Context-aware AI responses based on map location
 
 ## Tech Stack
 
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- Leaflet.js for maps
-- Google Gemini AI
-- OpenStreetMap Nominatim for geocoding
+- **Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS
+- **Maps**: Leaflet.js with OpenStreetMap
+- **Authentication**: NextAuth.js with Google OAuth
+- **AI**: Google Gemini Pro API
+- **Database**: PostgreSQL with Drizzle ORM
+- **Geocoding**: OpenStreetMap Nominatim API
+- **Deployment**: Vercel-ready with edge runtime
 
 ## Getting Started
 
-1. Clone the repository:
+### Quick Setup
+
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/lpolish/earthai2.git
    cd earthai2
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    pnpm install
    ```
 
-3. Create a `.env.local` file with your API keys:
-   ```
-   GOOGLE_API_KEY=your_gemini_api_key
-   ```
-
-4. Run the development server:
+3. **Set up database schema:**
    ```bash
-   pnpm dev
+   ./setup-auth.sh
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. **Run the development server:**
+   ```bash
+   pnpm run dev
+   ```
+
+5. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
+
+### Authentication Setup
+
+**Environment Variables (via Vercel):**
+- `NEXTAUTH_SECRET` - Random secret for JWT signing
+- `GOOGLE_CLIENT_ID` - From Google Cloud Console
+- `GOOGLE_CLIENT_SECRET` - From Google Cloud Console  
+- `DATABASE_URL` - PostgreSQL connection string
+- `GOOGLE_API_KEY` - For Gemini AI API
+
+**Google OAuth Setup:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create OAuth 2.0 credentials
+3. Add redirect URI: `https://yourdomain.com/api/auth/callback/google`
 
 ## Usage
 
-1. Navigate the map to your area of interest
-2. Use the chat interface to ask questions about the current location
-3. The AI will provide context-aware responses based on your map view
+1. **Navigate the map** to your area of interest
+2. **Sign in** using Google OAuth or create an account with email/password
+3. **Use the chat interface** to ask questions about the current location
+4. **Get AI responses** that are context-aware based on your map view
+5. **Explore different locations** - the AI adapts its responses to each area
+
+### Chat Features
+- 🔗 **Map Links**: AI responses include clickable links that navigate the map
+- 📍 **Location Context**: Questions are automatically enhanced with current map location
+- 💾 **Persistent Sessions**: Your conversations are saved and restored
+- 🎯 **Smart Responses**: AI provides relevant information about geography, culture, history, and more
 
 ## Contributing
 
