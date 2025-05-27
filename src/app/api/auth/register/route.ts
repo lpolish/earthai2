@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
-import { users } from '@/db';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
@@ -12,6 +10,9 @@ const registerSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Dynamic import to avoid build-time database connection
+    const { db, users } = await import('@/db');
+    
     const body = await req.json();
     const { email, password, name } = registerSchema.parse(body);
 

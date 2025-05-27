@@ -15,25 +15,13 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const result = await signIn('google', {
-        redirect: false,
+      // Use redirect flow for Google OAuth (best practice)
+      await signIn('google', {
         callbackUrl: '/',
       });
-
-      if (result?.error) {
-        setError('Google sign-in failed. Please try again.');
-        return;
-      }
-
-      if (result?.url) {
-        router.push(result.url);
-      } else {
-        router.push('/');
-      }
-      router.refresh();
     } catch (error) {
+      console.error('Google sign-in error:', error);
       setError('An error occurred during Google sign-in.');
-    } finally {
       setIsLoading(false);
     }
   };
