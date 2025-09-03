@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import dynamic from 'next/dynamic';
-
-const inter = Inter({ subsets: ["latin"] });
-
-const ClientLocationProvider = dynamic(
-  () => import('@/contexts/LocationContext').then((mod) => {
-    return { default: mod.LocationProvider };
-  }),
-  { ssr: false }
-);
+import { ClientProviders } from '@/components/ClientProviders';
 
 export const metadata: Metadata = {
   title: "EarthAI",
@@ -24,10 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ClientLocationProvider>
+      <body className="font-sans">
+        <ClientProviders>
           {children}
-        </ClientLocationProvider>
+        </ClientProviders>
       </body>
     </html>
   );
