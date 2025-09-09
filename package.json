@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.2.1",
+    "@google/generative-ai": "^0.24.1",
     "@types/leaflet": "^1.9.8",
     "ai": "^2.2.37",
     "leaflet": "^1.9.4",
